@@ -138,6 +138,10 @@ SendInput.argtypes = (
 GetCurrentThreadId = windll.kernel32.GetCurrentThreadId
 GetCurrentThreadId.restype = wintypes.DWORD
 
+GetSystemMetrics = windll.user32.GetSystemMetrics
+GetSystemMetrics.argtypes = (
+    wintypes.INT,)
+
 
 class MessageLoop(object):
     """A class representing a message loop.

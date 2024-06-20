@@ -33,6 +33,7 @@ from ctypes import (
 
 from pynput._util import NotifierMixin
 from pynput._util.win32 import (
+    GetSystemMetrics,
     INPUT,
     INPUT_union,
     ListenerMixin,
@@ -43,6 +44,11 @@ from . import _base
 
 #: A constant used as a factor when constructing mouse scroll data.
 WHEEL_DELTA = 120
+
+
+class SystemMetric(enum.IntEnum):
+    SM_CXSCREEN = 0
+    SM_CYSCREEN = 1
 
 
 class Button(enum.Enum):
@@ -58,7 +64,6 @@ class Button(enum.Enum):
 
 class Controller(NotifierMixin, _base.Controller):
     __GetCursorPos = windll.user32.GetCursorPos
-    __SetCursorPos = windll.user32.SetCursorPos
 
     def __init__(self, *args, **kwargs):
         super(Controller, self).__init__(*args, **kwargs)
@@ -72,7 +77,17 @@ class Controller(NotifierMixin, _base.Controller):
 
     def _position_set(self, pos):
         pos = int(pos[0]), int(pos[1])
-        self.__SetCursorPos(*pos)
+        SendInput(
+            1,
+            ctypes.byref(INPUT(
+                type=INPUT.MOUSE,
+                value=INPUT_union(
+                    mi=MOUSEINPUT(
+                        dx=(pos[0] * 65536) // GetSystemMetrics(SystemMetric.SM_CXSCREEN),
+                        dy=(pos[1] * 65536) // GetSystemMetrics(SystemMetric.SM_CYSCREEN),
+                        dwFlags=MOUSEINPUT.ABSOLUTE | MOUSEINPUT.MOVE)))),
+                ctypes.sizeof(INPUT)
+        )
         self._emit('on_move', *pos)
 
     def _scroll(self, dx, dy):
